@@ -2,17 +2,18 @@ NAME=myfirst
 SOURCE=$(NAME).asm
 BINARY=$(NAME).bin
 FLOPPY=$(NAME).flp
+RMFILES=$(BINARY) $(FLOPPY)
 
-default: floppy
+default: $(FLOPPY)
 
-binary: $(SOURCE)
+$(BINARY): $(SOURCE)
 	nasm -f bin -o $(BINARY) $(SOURCE)
 
-floppy: binary
+$(FLOPPY): $(BINARY)
 	dd status=noxfer conv=notrunc if=$(BINARY) of=$(FLOPPY)
 
-run: floppy
+run: $(FLOPPY)
 	qemu-system-x86_64 -fda $(FLOPPY)
 
 clean:
-	rm -f $(BINARY) $(FLOPPY)
+	rm -f $(RMFILES)
