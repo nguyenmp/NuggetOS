@@ -86,7 +86,7 @@ print_num:
 
     ; If the dividend is zero, there's no more digits to print
     cmp ax, 0
-    je .print_num_skip
+    je .print_num_no_more_digits
 
     ; Recursively print the remaining digits
     ; Save lowest digit before recursively calling for higher digits
@@ -96,7 +96,7 @@ print_num:
     pop ax
     pop dx
 
-.print_num_skip:
+.print_num_no_more_digits:
     ; Convert digit to character
     add dx, 48
 
