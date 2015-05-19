@@ -1,16 +1,16 @@
     ; Sets us in 16 bit mode
-    BITS 16
+    [bits 16]
 
 start:
     ; 07C0h is where the BIOS loads the boot sector
     ; Basically a magic number but is industry standard so just trust it
-    mov eax, 07C0h
+    mov ax, 07C0h
 
     ; (512 + 4096) / 16 bytes per paragraph = 288
     ; 512 is the size of our boot sectior (code section)
     ; 4096 is the size of our disk buffer
     ; Thus, we have 288 paragraphs
-    add eax, 288
+    add ax, 288
 
     ; Thus, our stack segment is pointed at the end of our disk buffer
     ; This is actually a count of paragraphs (which is 16 bytes/paragraph)
@@ -21,13 +21,13 @@ start:
     ; This essentially allocates 4kb for the stack
     ; This means we count down our stack pointer
     ; and might overwrite our data segment if we do
-    mov esp, 4096
+    mov sp, 4096
 
     ; Our data segment is actually at the start of our boot sector
-    mov eax, 07C0h
+    mov ax, 07C0h
     mov ds, ax
 
-    mov ax, 17764
+    mov ax, 65535
     push ax
     call println_num
     pop ax
@@ -47,11 +47,11 @@ start:
     text_string db 'This is my cool new OS!', 13, 10, 0
 
 println_num:
-    push ebp
-    mov ebp, esp
+    push bp
+    mov bp, sp
     push ax
 
-    mov ax, [ebp + 6]
+    mov ax, [bp + 4]
     push ax
     call print_num
     pop ax
@@ -60,8 +60,8 @@ println_num:
     call print_string
 
     pop ax
-    mov esp, ebp
-    pop ebp
+    mov sp, bp
+    pop bp
     ret
 
     text_newline db 13, 10, 0
@@ -69,20 +69,21 @@ println_num:
 ; Start Function print_num
 print_num:
     ; Subroutine prologue
-    push ebp
-    mov ebp, esp
+    push bp
+    mov bp, sp
     push ax
     push bx
     push dx
     
     ; Subroutine Body
     ; Load parameter as a register
-    mov dx, [ebp + 6]
+    mov ax, [bp + 4]
 
     ; Get first digit
-    cwd ; extends eax into edx
+    mov dx, 0
+    ;cwd ; extends ax into dx
     mov bx, 10
-    div bx ; quotient in eax and remainder in edx
+    div bx ; quotient in ax and remainder in dx
 
     ; If the dividend is zero, there's no more digits to print
     cmp ax, 0
@@ -105,13 +106,16 @@ print_num:
     mov al, dl
     int 10h
 
+.print_epilogue:
     ; Subroutine Epilogue
     pop dx        ; Restore registers
     pop bx        ; Restore registers
     pop ax        ; Restore registers
-    mov esp, ebp   ; Deallocate local variables
-    pop ebp        ; Reset base pointer to caller
+    mov sp, bp    ; Deallocate local variables
+    pop bp        ; Reset base pointer to caller
     ret
+
+    text_hyphen db '-', 0
 ; End Function print_num
 
 ; Start Function print_string
