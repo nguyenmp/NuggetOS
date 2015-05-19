@@ -4,13 +4,13 @@
 start:
     ; 07C0h is where the BIOS loads the boot sector
     ; Basically a magic number but is industry standard so just trust it
-    mov ax, 07C0h
+    mov eax, 07C0h
 
     ; (512 + 4096) / 16 bytes per paragraph = 288
     ; 512 is the size of our boot sectior (code section)
     ; 4096 is the size of our disk buffer
     ; Thus, we have 288 paragraphs
-    add ax, 288
+    add eax, 288
 
     ; Thus, our stack segment is pointed at the end of our disk buffer
     ; This is actually a count of paragraphs (which is 16 bytes/paragraph)
@@ -21,11 +21,16 @@ start:
     ; This essentially allocates 4kb for the stack
     ; This means we count down our stack pointer
     ; and might overwrite our data segment if we do
-    mov sp, 4096
+    mov esp, 4096
 
     ; Our data segment is actually at the start of our boot sector
-    mov ax, 07C0h
+    mov eax, 07C0h
     mov ds, ax
+
+    mov ax, 17764
+    push ax
+    call println_num
+    pop ax
  
     ; Load the text string as the source register for the next call
     mov si, text_string
@@ -40,6 +45,74 @@ start:
 
     ; Declares a null terminated string
     text_string db 'This is my cool new OS!', 13, 10, 0
+
+println_num:
+    push ebp
+    mov ebp, esp
+    push ax
+
+    mov ax, [ebp + 6]
+    push ax
+    call print_num
+    pop ax
+
+    mov si, text_newline
+    call print_string
+
+    pop ax
+    mov esp, ebp
+    pop ebp
+    ret
+
+    text_newline db 13, 10, 0
+
+; Start Function print_num
+print_num:
+    ; Subroutine prologue
+    push ebp
+    mov ebp, esp
+    push ax
+    push bx
+    push dx
+    
+    ; Subroutine Body
+    ; Load parameter as a register
+    mov dx, [ebp + 6]
+
+    ; Get first digit
+    cwd ; extends eax into edx
+    mov bx, 10
+    div bx ; quotient in eax and remainder in edx
+
+    ; If the dividend is zero, there's no more digits to print
+    cmp ax, 0
+    je .print_num_skip
+
+    ; Recursively print the remaining digits
+    ; Save lowest digit before recursively calling for higher digits
+    push dx
+    push ax
+    call print_num
+    pop ax
+    pop dx
+
+.print_num_skip:
+    ; Convert digit to character
+    add dx, 48
+
+    ; Print lowest digit
+    mov ah, 0Eh
+    mov al, dl
+    int 10h
+
+    ; Subroutine Epilogue
+    pop dx        ; Restore registers
+    pop bx        ; Restore registers
+    pop ax        ; Restore registers
+    mov esp, ebp   ; Deallocate local variables
+    pop ebp        ; Reset base pointer to caller
+    ret
+; End Function print_num
 
 ; Start Function print_string
 print_string:
