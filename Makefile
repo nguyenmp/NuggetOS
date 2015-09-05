@@ -10,7 +10,7 @@ $(BINARY): $(SOURCE)
 	nasm -f bin -o $(BINARY) $(SOURCE)
 
 $(FLOPPY): $(BINARY)
-	dd status=noxfer conv=notrunc if=$(BINARY) of=$(FLOPPY)
+	dd conv=notrunc if=$(BINARY) of=$(FLOPPY)
 
 run: $(FLOPPY)
 	qemu-system-x86_64 -fda $(FLOPPY)
